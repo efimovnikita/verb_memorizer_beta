@@ -20,7 +20,7 @@ fn main() {
                         } else {
                             Err(format!("Invalid path: {}", path))
                         }
-                    })
+                    }),
             ),
         )
         .get_matches();
@@ -46,21 +46,24 @@ fn main() {
         let mut total_answers = 0;
 
         for verb in &unwrapped_verbs {
-            println!("Infinitive form: {}", verb.infinitive);
+            println!(
+                "{}",
+                format!("Infinitive form: {}", verb.infinitive)
+                    .underline()
+                    .yellow()
+                    .bold()
+            );
 
-            println!("Past form:");
-            let mut past = String::new();
+            println!("Past and past participle forms (separated by a space):");
+            let mut input = String::new();
             io::stdin()
-                .read_line(&mut past)
+                .read_line(&mut input)
                 .expect("Error reading input");
-            let past = past.trim();
+            let input = input.trim();
 
-            println!("Past participle form:");
-            let mut past_participle = String::new();
-            io::stdin()
-                .read_line(&mut past_participle)
-                .expect("Error reading input");
-            let past_participle = past_participle.trim();
+            let mut parts = input.split_whitespace();
+            let past = parts.next().unwrap();
+            let past_participle = parts.next().unwrap();
 
             if past == verb.past && past_participle == verb.past_participle {
                 correct_answers += 1;
