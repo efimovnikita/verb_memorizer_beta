@@ -9,3 +9,6 @@ edition = "2021"
 clap = { version = "4.0.30", features = ["derive"] }
 colored = "2.0.0"
 rand = "0.8.5"
+
+[build-dependencies]
+copy_to_output = "2.0.0"

@@ -1,4 +1,4 @@
-use clap::{Command, Arg};
+use clap::{Arg, Command};
 use colored::*;
 use rand::{seq::SliceRandom, thread_rng};
 use std::fs;
@@ -22,13 +22,12 @@ fn main() {
         .about("App for memorizing irregular verbs forms.")
         .subcommand_required(true)
         .subcommand(
-            Command::new("verbs")
-                .arg(
-                    Arg::new("FILE")
-                        .help("The file with verbs to memorize")
-                        .default_value("irregular_verbs.txt")
-                        .value_parser(is_path_exists)
-                )
+            Command::new("verbs").arg(
+                Arg::new("FILE")
+                    .help("The file with verbs to memorize")
+                    .default_value("irregular_verbs.txt")
+                    .value_parser(is_path_exists),
+            ),
         )
         .get_matches();
 
