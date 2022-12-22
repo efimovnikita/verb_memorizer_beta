@@ -16,11 +16,18 @@ fn is_path_exists(p: &str) -> Result<String, String> {
 fn main() {
     // Parse the command line arguments
     let matches = Command::new("memorize-app")
-        .bin_name("memorize")
         .version("1.0")
         .author("Maskedball <maskedballmail@gmail.com>")
         .about("App for memorizing irregular verbs forms.")
         .subcommand_required(true)
+        .subcommand(
+            Command::new("memo").arg(
+                Arg::new("FILE")
+                    .help("The file with verbs to memorize")
+                    .default_value("irregular_verbs.txt")
+                    .value_parser(is_path_exists),
+            ),
+        )
         .subcommand(
             Command::new("verbs").arg(
                 Arg::new("FILE")
@@ -32,7 +39,7 @@ fn main() {
         .get_matches();
 
     // Check if the "verbs" subcommand was used
-    if let Some(matches) = matches.subcommand_matches("verbs") {
+    if let Some(matches) = matches.subcommand_matches("memo") {
         // Get the value of the "FILE" argument
         let file_path = matches.get_one::<String>("FILE").unwrap();
 
@@ -93,6 +100,25 @@ fn main() {
         }
 
         println!("Correct answers: {}/{}", correct_answers, total_answers);
+    }
+
+    if let Some(matches) = matches.subcommand_matches("verbs") {
+        // Get the value of the "FILE" argument
+        let file_path = matches.get_one::<String>("FILE").unwrap();
+
+        let mut verbs: Vec<IrregularVerb> = Vec::new();
+
+        match read_irregular_verbs(file_path) {
+            Ok(vector) => verbs.extend(vector),
+            Err(error) => {
+                eprintln!("Error while extracting list of verbs from file: {}", error);
+                return;
+            }
+        }
+
+        for verb in verbs {
+            println!("{}", verb.infinitive);
+        }
     }
 }
 
