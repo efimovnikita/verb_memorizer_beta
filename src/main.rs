@@ -16,22 +16,24 @@ fn is_path_exists(p: &str) -> Result<String, String> {
 fn main() {
     // Parse the command line arguments
     let matches = Command::new("memorize-app")
+        .bin_name("memorize")
         .version("1.0")
         .author("Maskedball <maskedballmail@gmail.com>")
         .about("App for memorizing irregular verbs forms.")
+        .subcommand_required(true)
         .subcommand(
-            Command::new("memorize")
+            Command::new("verbs")
                 .arg(
                     Arg::new("FILE")
-                        .help("The file to memorize")
-                        .required(true)
+                        .help("The file with verbs to memorize")
+                        .default_value("irregular_verbs.txt")
                         .value_parser(is_path_exists)
                 )
         )
         .get_matches();
 
-    // Check if the "memorize" subcommand was used
-    if let Some(matches) = matches.subcommand_matches("memorize") {
+    // Check if the "verbs" subcommand was used
+    if let Some(matches) = matches.subcommand_matches("verbs") {
         // Get the value of the "FILE" argument
         let file_path = matches.get_one::<String>("FILE").unwrap();
 
