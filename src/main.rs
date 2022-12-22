@@ -1,34 +1,39 @@
-use clap::{App, Arg};
+use clap::{Command, Arg};
 use colored::*;
 use rand::{seq::SliceRandom, thread_rng};
 use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 
+fn is_path_exists(p: &str) -> Result<String, String> {
+    if Path::new(&p).exists() {
+        Ok(p.to_string())
+    } else {
+        Err(format!("Invalid path: {}", p))
+    }
+}
+
 fn main() {
     // Parse the command line arguments
-    let matches = App::new("memorize-app")
+    let matches = Command::new("memorize-app")
+        .version("1.0")
+        .author("Maskedball <maskedballmail@gmail.com>")
+        .about("App for memorizing irregular verbs forms.")
         .subcommand(
-            App::new("memorize").arg(
-                Arg::with_name("FILE")
-                    .help("The file to memorize")
-                    .required(true)
-                    .index(1)
-                    .validator(|path| {
-                        if Path::new(&path).exists() {
-                            Ok(())
-                        } else {
-                            Err(format!("Invalid path: {}", path))
-                        }
-                    }),
-            ),
+            Command::new("memorize")
+                .arg(
+                    Arg::new("FILE")
+                        .help("The file to memorize")
+                        .required(true)
+                        .value_parser(is_path_exists)
+                )
         )
         .get_matches();
 
     // Check if the "memorize" subcommand was used
     if let Some(matches) = matches.subcommand_matches("memorize") {
         // Get the value of the "FILE" argument
-        let file_path = matches.value_of("FILE").unwrap();
+        let file_path = matches.get_one::<String>("FILE").unwrap();
 
         let verbs = read_irregular_verbs(file_path);
         if verbs.is_err() {
