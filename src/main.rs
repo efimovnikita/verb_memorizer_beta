@@ -36,22 +36,24 @@ fn main() {
         // Get the value of the "FILE" argument
         let file_path = matches.get_one::<String>("FILE").unwrap();
 
-        let verbs = read_irregular_verbs(file_path);
-        if verbs.is_err() {
-            eprintln!("Error while extracting list of verbs from file");
-            return;
-        }
+        let mut verbs: Vec<IrregularVerb> = Vec::new();
 
-        let mut unwrapped_verbs = verbs.unwrap();
+        match read_irregular_verbs(file_path) {
+            Ok(vector) => verbs.extend(vector),
+            Err(error) => {
+                eprintln!("Error while extracting list of verbs from file: {}", error);
+                return;
+            }
+        }
 
         // Shuffle vector
         let mut rng = thread_rng();
-        unwrapped_verbs.shuffle(&mut rng);
+        verbs.shuffle(&mut rng);
 
         let mut correct_answers = 0;
         let mut total_answers = 0;
 
-        for verb in &unwrapped_verbs {
+        for verb in &verbs {
             println!(
                 "{}",
                 format!("Infinitive form: {}", verb.infinitive)
@@ -68,8 +70,8 @@ fn main() {
             let input = input.trim();
 
             let mut parts = input.split_whitespace();
-            let past = parts.next().unwrap();
-            let past_participle = parts.next().unwrap();
+            let past = parts.next().unwrap_or("");
+            let past_participle = parts.next().unwrap_or("");
 
             if past == verb.past && past_participle == verb.past_participle {
                 correct_answers += 1;
