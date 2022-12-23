@@ -102,8 +102,8 @@ fn main() {
             let input = input.trim();
 
             let mut parts = input.split_whitespace();
-            let past = parts.next().unwrap_or("");
-            let past_participle = parts.next().unwrap_or("");
+            let past = parts.next().unwrap_or("").to_lowercase();
+            let past_participle = parts.next().unwrap_or("").to_lowercase();
 
             if past == verb.past && past_participle == verb.past_participle {
                 correct_answers += 1;
@@ -152,8 +152,8 @@ fn main() {
         let verb = matches.get_one::<String>("VERB").unwrap();
         let forms = matches.get_one::<String>("FORMS").unwrap().trim();
         let mut parts = forms.split_whitespace();
-        let past = parts.next().unwrap_or("");
-        let past_participle = parts.next().unwrap_or("");
+        let past = parts.next().unwrap_or("").to_lowercase();
+        let past_participle = parts.next().unwrap_or("").to_lowercase();
 
         let mut verbs: Vec<IrregularVerb> = Vec::new();
 
