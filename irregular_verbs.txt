@@ -93,3 +93,4 @@ wake, woke, woken
 wear, wore, worn
 win, won, won
 write, wrote, written
+be, was, been

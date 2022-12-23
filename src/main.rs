@@ -1,6 +1,8 @@
 use clap::{Arg, Command};
 use colored::*;
 use rand::{seq::SliceRandom, thread_rng};
+use regex::Regex;
+use serde::Serialize;
 use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
@@ -13,28 +15,51 @@ fn is_path_exists(p: &str) -> Result<String, String> {
     }
 }
 
+fn is_two_forms_correct(s: &str) -> Result<String, String> {
+    // Create a regular expression to match the pattern "at least one character, then at least one whitespace, then at least one character"
+    let re = Regex::new(r"^\w+\s+\w+$").unwrap();
+
+    // Use the `is_match()` method to check if the input string `s` matches the regular expression
+    if re.is_match(s) {
+        // If the input string `s` matches the pattern, return it as a `String` wrapped in `Ok`
+        Ok(s.to_string())
+    } else {
+        // If the input string `s` does not match the pattern, return an error message wrapped in `Err`
+        Err(format!("The string '{}' does not satisfy the pattern", s))
+    }
+}
+
 fn main() {
     // Parse the command line arguments
+    let file_arg = Arg::new("FILE")
+        .help("The file with verbs to memorize")
+        .default_value("irregular_verbs.txt")
+        .value_parser(is_path_exists);
     let matches = Command::new("memorize-app")
         .version("1.0")
         .author("Maskedball <maskedballmail@gmail.com>")
         .about("App for memorizing irregular verbs forms.")
         .subcommand_required(true)
+        .subcommand(Command::new("memo").arg(&file_arg))
+        .subcommand(Command::new("verbs").arg(&file_arg))
         .subcommand(
-            Command::new("memo").arg(
-                Arg::new("FILE")
-                    .help("The file with verbs to memorize")
-                    .default_value("irregular_verbs.txt")
-                    .value_parser(is_path_exists),
-            ),
-        )
-        .subcommand(
-            Command::new("verbs").arg(
-                Arg::new("FILE")
-                    .help("The file with verbs to memorize")
-                    .default_value("irregular_verbs.txt")
-                    .value_parser(is_path_exists),
-            ),
+            Command::new("check")
+                .arg(&file_arg)
+                .arg(
+                    Arg::new("FORMS")
+                        .long("forms")
+                        .short('f')
+                        .help("Two forms of verb for check")
+                        .required(true)
+                        .value_parser(is_two_forms_correct)
+                )
+                .arg(
+                    Arg::new("VERB")
+                        .long("verb")
+                        .short('v')
+                        .help("Verb for check")
+                        .required(true)
+                ),
         )
         .get_matches();
 
@@ -49,7 +74,7 @@ fn main() {
             Ok(vector) => verbs.extend(vector),
             Err(error) => {
                 eprintln!("Error while extracting list of verbs from file: {}", error);
-                return;
+                std::process::exit(1)
             }
         }
 
@@ -112,13 +137,70 @@ fn main() {
             Ok(vector) => verbs.extend(vector),
             Err(error) => {
                 eprintln!("Error while extracting list of verbs from file: {}", error);
-                return;
+                std::process::exit(1)
             }
         }
 
         for verb in verbs {
             println!("{}", verb.infinitive);
         }
+    }
+
+    if let Some(matches) = matches.subcommand_matches("check") {
+        // Get the value of the "FILE" argument
+        let file_path = matches.get_one::<String>("FILE").unwrap();
+        let verb = matches.get_one::<String>("VERB").unwrap();
+        let forms = matches.get_one::<String>("FORMS").unwrap().trim();
+        let mut parts = forms.split_whitespace();
+        let past = parts.next().unwrap_or("");
+        let past_participle = parts.next().unwrap_or("");
+
+        let mut verbs: Vec<IrregularVerb> = Vec::new();
+
+        match read_irregular_verbs(file_path) {
+            Ok(vector) => verbs.extend(vector),
+            Err(error) => {
+                eprintln!("Error while extracting list of verbs from file: {}", error);
+                std::process::exit(1)
+            }
+        }
+
+        let filtered_verbs: Vec<&IrregularVerb> = verbs
+            .iter()
+            .filter(|v| v.infinitive == verb.trim())
+            .collect();
+        if filtered_verbs.len() == 0 {
+            eprintln!("Can't find verb '{}' in file '{}'", verb, file_path);
+            std::process::exit(1)
+        }
+
+        let filtered_verb = filtered_verbs.first().unwrap();
+
+        if past == filtered_verb.past && past_participle == filtered_verb.past_participle {
+            let msg: ResultMsg = ResultMsg::new(true, "".to_string());
+            println!("{}", serde_json::to_string(&msg).unwrap());
+        } else {
+            let msg: ResultMsg = ResultMsg::new(
+                false,
+                format!(
+                    "{} - {} - {}",
+                    filtered_verb.infinitive, filtered_verb.past, filtered_verb.past_participle
+                ),
+            );
+            println!("{}", serde_json::to_string(&msg).unwrap());
+        }
+    }
+}
+
+#[derive(Serialize, Debug)]
+struct ResultMsg {
+    is_success: bool,
+    msg: String,
+}
+
+impl ResultMsg {
+    fn new(is_success: bool, msg: String) -> ResultMsg {
+        ResultMsg { is_success, msg }
     }
 }
 
