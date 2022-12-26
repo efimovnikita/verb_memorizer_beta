@@ -4,6 +4,9 @@ use rand::{seq::SliceRandom, thread_rng};
 
 mod library;
 
+#[cfg(test)]
+mod tests;
+
 fn main() {
     // Parse the command line arguments
     let file_arg = Arg::new("FILE")
