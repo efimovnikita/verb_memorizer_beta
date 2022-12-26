@@ -7,25 +7,25 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-fn is_path_exists(p: &str) -> Result<String, String> {
-    if Path::new(&p).exists() {
-        Ok(p.to_string())
+fn is_path_exists(path: &str) -> Result<String, String> {
+    if Path::new(&path).exists() {
+        Ok(path.to_string())
     } else {
-        Err(format!("Invalid path: {}", p))
+        Err(format!("Invalid path: {path}"))
     }
 }
 
-fn is_two_forms_correct(s: &str) -> Result<String, String> {
+fn is_two_forms_correct(input: &str) -> Result<String, String> {
     // Create a regular expression to match the pattern "at least one character, then at least one whitespace, then at least one character"
     let re = Regex::new(r"^\w+\s+\w+$").unwrap();
 
     // Use the `is_match()` method to check if the input string `s` matches the regular expression
-    if re.is_match(s) {
+    if re.is_match(input) {
         // If the input string `s` matches the pattern, return it as a `String` wrapped in `Ok`
-        Ok(s.to_string())
+        Ok(input.to_string())
     } else {
         // If the input string `s` does not match the pattern, return an error message wrapped in `Err`
-        Err(format!("The string '{}' does not satisfy the pattern", s))
+        Err(format!("The string '{input}' does not satisfy the pattern"))
     }
 }
 
@@ -51,14 +51,14 @@ fn main() {
                         .short('f')
                         .help("Two forms of verb for check")
                         .required(true)
-                        .value_parser(is_two_forms_correct)
+                        .value_parser(is_two_forms_correct),
                 )
                 .arg(
                     Arg::new("VERB")
                         .long("verb")
                         .short('v')
                         .help("Verb for check")
-                        .required(true)
+                        .required(true),
                 ),
         )
         .get_matches();
@@ -73,7 +73,7 @@ fn main() {
         match read_irregular_verbs(file_path) {
             Ok(vector) => verbs.extend(vector),
             Err(error) => {
-                eprintln!("Error while extracting list of verbs from file: {}", error);
+                eprintln!("Error while extracting list of verbs from file: {error}");
                 std::process::exit(1)
             }
         }
@@ -124,7 +124,7 @@ fn main() {
             println!()
         }
 
-        println!("Correct answers: {}/{}", correct_answers, total_answers);
+        println!("Correct answers: {correct_answers}/{total_answers}");
     }
 
     if let Some(matches) = matches.subcommand_matches("verbs") {
@@ -136,7 +136,7 @@ fn main() {
         match read_irregular_verbs(file_path) {
             Ok(vector) => verbs.extend(vector),
             Err(error) => {
-                eprintln!("Error while extracting list of verbs from file: {}", error);
+                eprintln!("Error while extracting list of verbs from file: {error}");
                 std::process::exit(1)
             }
         }
@@ -160,7 +160,7 @@ fn main() {
         match read_irregular_verbs(file_path) {
             Ok(vector) => verbs.extend(vector),
             Err(error) => {
-                eprintln!("Error while extracting list of verbs from file: {}", error);
+                eprintln!("Error while extracting list of verbs from file: {error}");
                 std::process::exit(1)
             }
         }
@@ -169,8 +169,8 @@ fn main() {
             .iter()
             .filter(|v| v.infinitive == verb.trim())
             .collect();
-        if filtered_verbs.len() == 0 {
-            eprintln!("Can't find verb '{}' in file '{}'", verb, file_path);
+        if filtered_verbs.is_empty() {
+            eprintln!("Can't find verb '{verb}' in file '{file_path}'");
             std::process::exit(1)
         }
 
@@ -223,7 +223,7 @@ impl IrregularVerb {
 fn read_irregular_verbs(filename: &str) -> Result<Vec<IrregularVerb>, String> {
     let file = match fs::File::open(filename) {
         Ok(file) => file,
-        Err(error) => return Err(format!("Error opening file: {}", error)),
+        Err(error) => return Err(format!("Error opening file: {error}")),
     };
     let reader = io::BufReader::new(file);
 
@@ -232,9 +232,9 @@ fn read_irregular_verbs(filename: &str) -> Result<Vec<IrregularVerb>, String> {
     for line in reader.lines() {
         let line = match line {
             Ok(line) => line,
-            Err(error) => return Err(format!("Error reading line: {}", error)),
+            Err(error) => return Err(format!("Error reading line: {error}")),
         };
-        let mut parts = line.split(",");
+        let mut parts = line.split(',');
 
         let infinitive = match parts.next() {
             Some(infinitive) => infinitive.trim().to_owned(),
