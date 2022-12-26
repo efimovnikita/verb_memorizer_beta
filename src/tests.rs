@@ -1,4 +1,4 @@
-use super::*;
+use crate::library::*;
 
 #[test]
 fn test_is_two_forms_correct() {

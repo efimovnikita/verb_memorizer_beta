@@ -1,71 +1,15 @@
 use clap::{Arg, Command};
 use colored::*;
 use rand::{seq::SliceRandom, thread_rng};
-use regex::Regex;
-use serde::Serialize;
-use std::fs;
-use std::io::{self, BufRead};
-use std::path::Path;
 
-#[cfg(test)]
-mod tests;
-
-fn is_path_exists(path: &str) -> Result<String, String> {
-    if Path::new(&path).exists() {
-        Ok(path.to_string())
-    } else {
-        Err(format!("Invalid path: {path}"))
-    }
-}
-
-fn replace_commas_with_whitespaces(s: &str) -> String {
-    s.chars().map(|c| if c == ',' { ' ' } else { c }).collect()
-}
-
-fn remove_extra_whitespaces(s: &str) -> String {
-    let mut result = String::new();
-    let mut previous_char_was_whitespace = false;
-
-    for c in s.chars() {
-        if c.is_whitespace() {
-            if !previous_char_was_whitespace {
-                result.push(c);
-            }
-            previous_char_was_whitespace = true;
-        } else {
-            result.push(c);
-            previous_char_was_whitespace = false;
-        }
-    }
-
-    result
-}
-
-fn is_two_forms_correct(input: &str) -> Result<String, String> {
-    // Remove commas
-    let input_without_commas = replace_commas_with_whitespaces(input);
-
-    // Create a regular expression to match the pattern "at least one character, then at least one whitespace, then at least one character"
-    let regex = Regex::new(r"^\w+\s+\w+$").unwrap();
-
-    // Use the `is_match()` method to check if the input string `s` matches the regular expression
-    if regex.is_match(&input_without_commas) {
-        // If the input string `s` matches the pattern, return it as a `String` wrapped in `Ok`
-        Ok(remove_extra_whitespaces(&input_without_commas))
-    } else {
-        // If the input string `s` does not match the pattern, return an error message wrapped in `Err`
-        Err(format!(
-            "The string '{input}' does not satisfy the pattern 'word word'"
-        ))
-    }
-}
+mod library;
 
 fn main() {
     // Parse the command line arguments
     let file_arg = Arg::new("FILE")
         .help("The file with verbs to memorize")
         .default_value("irregular_verbs.txt")
-        .value_parser(is_path_exists);
+        .value_parser(library::is_path_exists);
     let matches = Command::new("memorize-app")
         .version("1.0")
         .author("Maskedball <maskedballmail@gmail.com>")
@@ -82,7 +26,7 @@ fn main() {
                         .short('f')
                         .help("Two forms of verb for check")
                         .required(true)
-                        .value_parser(is_two_forms_correct),
+                        .value_parser(library::is_two_forms_correct),
                 )
                 .arg(
                     Arg::new("VERB")
@@ -99,9 +43,9 @@ fn main() {
         // Get the value of the "FILE" argument
         let file_path = matches.get_one::<String>("FILE").unwrap();
 
-        let mut verbs: Vec<IrregularVerb> = Vec::new();
+        let mut verbs: Vec<library::IrregularVerb> = Vec::new();
 
-        match read_irregular_verbs(file_path) {
+        match library::read_irregular_verbs(file_path) {
             Ok(vector) => verbs.extend(vector),
             Err(error) => {
                 eprintln!("Error while extracting list of verbs from file: {error}");
@@ -127,7 +71,7 @@ fn main() {
 
             println!("Past and past participle forms (separated by a space):");
             let mut input = String::new();
-            io::stdin()
+            std::io::stdin()
                 .read_line(&mut input)
                 .expect("Error reading input");
             let input = input.trim();
@@ -162,9 +106,9 @@ fn main() {
         // Get the value of the "FILE" argument
         let file_path = matches.get_one::<String>("FILE").unwrap();
 
-        let mut verbs: Vec<IrregularVerb> = Vec::new();
+        let mut verbs: Vec<library::IrregularVerb> = Vec::new();
 
-        match read_irregular_verbs(file_path) {
+        match library::read_irregular_verbs(file_path) {
             Ok(vector) => verbs.extend(vector),
             Err(error) => {
                 eprintln!("Error while extracting list of verbs from file: {error}");
@@ -186,9 +130,9 @@ fn main() {
         let past = parts.next().unwrap_or("").to_lowercase();
         let past_participle = parts.next().unwrap_or("").to_lowercase();
 
-        let mut verbs: Vec<IrregularVerb> = Vec::new();
+        let mut verbs: Vec<library::IrregularVerb> = Vec::new();
 
-        match read_irregular_verbs(file_path) {
+        match library::read_irregular_verbs(file_path) {
             Ok(vector) => verbs.extend(vector),
             Err(error) => {
                 eprintln!("Error while extracting list of verbs from file: {error}");
@@ -196,7 +140,7 @@ fn main() {
             }
         }
 
-        let filtered_verbs: Vec<&IrregularVerb> = verbs
+        let filtered_verbs: Vec<&library::IrregularVerb> = verbs
             .iter()
             .filter(|v| v.infinitive == verb.trim())
             .collect();
@@ -208,10 +152,10 @@ fn main() {
         let filtered_verb = filtered_verbs.first().unwrap();
 
         if past == filtered_verb.past && past_participle == filtered_verb.past_participle {
-            let msg: ResultMsg = ResultMsg::new(true, "".to_string());
+            let msg: library::ResultMsg = library::ResultMsg::new(true, "".to_string());
             println!("{}", serde_json::to_string(&msg).unwrap());
         } else {
-            let msg: ResultMsg = ResultMsg::new(
+            let msg: library::ResultMsg = library::ResultMsg::new(
                 false,
                 format!(
                     "{} - {} - {}",
@@ -221,67 +165,4 @@ fn main() {
             println!("{}", serde_json::to_string(&msg).unwrap());
         }
     }
-}
-
-#[derive(Serialize, Debug)]
-struct ResultMsg {
-    is_success: bool,
-    msg: String,
-}
-
-impl ResultMsg {
-    fn new(is_success: bool, msg: String) -> ResultMsg {
-        ResultMsg { is_success, msg }
-    }
-}
-
-struct IrregularVerb {
-    infinitive: String,
-    past: String,
-    past_participle: String,
-}
-
-impl IrregularVerb {
-    fn new(infinitive: String, past: String, past_participle: String) -> IrregularVerb {
-        IrregularVerb {
-            infinitive,
-            past,
-            past_participle,
-        }
-    }
-}
-
-fn read_irregular_verbs(filename: &str) -> Result<Vec<IrregularVerb>, String> {
-    let file = match fs::File::open(filename) {
-        Ok(file) => file,
-        Err(error) => return Err(format!("Error opening file: {error}")),
-    };
-    let reader = io::BufReader::new(file);
-
-    let mut verbs = Vec::new();
-
-    for line in reader.lines() {
-        let line = match line {
-            Ok(line) => line,
-            Err(error) => return Err(format!("Error reading line: {error}")),
-        };
-        let mut parts = line.split(',');
-
-        let infinitive = match parts.next() {
-            Some(infinitive) => infinitive.trim().to_owned(),
-            None => return Err("Error parsing infinitive form".to_owned()),
-        };
-        let past = match parts.next() {
-            Some(past) => past.trim().to_owned(),
-            None => return Err("Error parsing past form".to_owned()),
-        };
-        let past_participle = match parts.next() {
-            Some(past_participle) => past_participle.trim().to_owned(),
-            None => return Err("Error parsing past participle form".to_owned()),
-        };
-
-        verbs.push(IrregularVerb::new(infinitive, past, past_participle));
-    }
-
-    Ok(verbs)
 }
