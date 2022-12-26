@@ -7,6 +7,9 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 
+#[cfg(test)]
+mod tests;
+
 fn is_path_exists(path: &str) -> Result<String, String> {
     if Path::new(&path).exists() {
         Ok(path.to_string())
