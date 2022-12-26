@@ -18,17 +18,45 @@ fn is_path_exists(path: &str) -> Result<String, String> {
     }
 }
 
+fn replace_commas_with_whitespaces(s: &str) -> String {
+    s.chars().map(|c| if c == ',' { ' ' } else { c }).collect()
+}
+
+fn remove_extra_whitespaces(s: &str) -> String {
+    let mut result = String::new();
+    let mut previous_char_was_whitespace = false;
+
+    for c in s.chars() {
+        if c.is_whitespace() {
+            if !previous_char_was_whitespace {
+                result.push(c);
+            }
+            previous_char_was_whitespace = true;
+        } else {
+            result.push(c);
+            previous_char_was_whitespace = false;
+        }
+    }
+
+    result
+}
+
 fn is_two_forms_correct(input: &str) -> Result<String, String> {
+    // Remove commas
+    let input_without_commas = replace_commas_with_whitespaces(input);
+
     // Create a regular expression to match the pattern "at least one character, then at least one whitespace, then at least one character"
-    let re = Regex::new(r"^\w+\s+\w+$").unwrap();
+    let regex = Regex::new(r"^\w+\s+\w+$").unwrap();
 
     // Use the `is_match()` method to check if the input string `s` matches the regular expression
-    if re.is_match(input) {
+    if regex.is_match(&input_without_commas) {
         // If the input string `s` matches the pattern, return it as a `String` wrapped in `Ok`
-        Ok(input.to_string())
+        Ok(remove_extra_whitespaces(&input_without_commas))
     } else {
         // If the input string `s` does not match the pattern, return an error message wrapped in `Err`
-        Err(format!("The string '{input}' does not satisfy the pattern"))
+        Err(format!(
+            "The string '{input}' does not satisfy the pattern 'word word'"
+        ))
     }
 }
 
