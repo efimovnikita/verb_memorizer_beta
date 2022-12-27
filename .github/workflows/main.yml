@@ -25,7 +25,7 @@ jobs:
     - name: Create artifacts directory
       run: mkdir artifacts
     - name: Copy artifacts
-      run: cp target/release/verb_memorizer_beta artifacts/
+      run: cp target/release/verb_memorizer_beta artifacts/ | zip -r linux.zip artifacts
   release:
     needs: [build]
     runs-on: ubuntu-latest
@@ -46,6 +46,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts
+          asset_path: ./linux.zip
           asset_name: linux.zip
           asset_content_type: application/zip
