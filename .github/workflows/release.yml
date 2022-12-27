@@ -1,5 +1,3 @@
-uses: main.yml
-
 name: Create Release
 
 on:
