@@ -21,7 +21,7 @@ jobs:
     - name: Test Project
       run: cargo test
     - name: Analyze with Clippy
-      run: cargo clipp
+      run: cargo clippy
   release:
     needs: [build]
     runs-on: ubuntu-latest
