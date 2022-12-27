@@ -25,7 +25,7 @@ jobs:
     - name: Create artifacts directory
       run: mkdir artifacts
     - name: Copy artifacts
-      run: cp target/release/verb_memorizer_beta artifacts/ | zip -r linux.zip artifacts
+      run: cp target/release/verb_memorizer_beta target/release/irregular_verbs.txt artifacts/ | zip -r linux.zip artifacts
     - name: Create release
       id: create_release
       uses: actions/create-release@v1
