@@ -25,7 +25,7 @@ jobs:
     - name: Create artifacts directory
       run: mkdir artifacts
     - name: Copy artifacts
-      run: cp -R target/release/ artifacts/
+      run: cp target/release/verb_memorizer_beta artifacts/
   release:
     needs: [build]
     runs-on: ubuntu-latest
@@ -44,7 +44,7 @@ jobs:
         with:
           upload_url: ${{ github.release.upload_url }}
           asset_path: artifacts
-          asset_name: binaries-${{ github.ref }}.zip
+          asset_name: linux_binaries-${{ github.ref }}.zip
           asset_content_type: application/zip
       - name: Create release
         uses: actions/create-release@v1
