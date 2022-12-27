@@ -1,6 +1,9 @@
-name: Build, Test, and Analyze
+name: Build, Test, Analyze and Release
 
-on: [push]
+on:
+  push:
+    tags:
+      - "v*"
 
 jobs:
   build:
@@ -18,4 +21,24 @@ jobs:
     - name: Test Project
       run: cargo test
     - name: Analyze with Clippy
-      run: cargo clippy
+      run: cargo clipp
+  release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Build project
+        run: cargo build --release
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
