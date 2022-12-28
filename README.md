@@ -12,7 +12,7 @@ To use `verb_memorizer_beta`, you will need to have Rust installed on your machi
 
 You can use it by running `verb_memorizer_beta` followed by a subcommand. The available subcommands are:
 
-- `memo`: Display a list of irregular verbs to memorize.
+- `memo`: Start training mode.
 - `verbs`: Display a list of all irregular verbs.
 - `check`: Check if a given verb and its forms are correct.
 
