@@ -1,3 +1,4 @@
+use crate::library::is_two_forms_correct;
 use clap::{Arg, Command};
 use colored::*;
 use rand::{seq::SliceRandom, thread_rng};
@@ -29,7 +30,7 @@ fn main() {
                         .short('f')
                         .help("Two forms of verb for check")
                         .required(true)
-                        .value_parser(library::is_two_forms_correct),
+                        .value_parser(is_two_forms_correct),
                 )
                 .arg(
                     Arg::new("VERB")
@@ -79,24 +80,39 @@ fn main() {
                 .expect("Error reading input");
             let input = input.trim();
 
-            let mut parts = input.split_whitespace();
-            let past = parts.next().unwrap_or("").to_lowercase();
-            let past_participle = parts.next().unwrap_or("").to_lowercase();
-
-            if past == verb.past && past_participle == verb.past_participle {
-                correct_answers += 1;
-                println!("{}", "Correct!".green().bold());
-            } else {
+            if let Err(error) = is_two_forms_correct(input) {
                 println!(
                     "{}",
                     format!(
-                        "Incorrect. The correct answer is: {} - {} - {}",
-                        verb.infinitive, verb.past, verb.past_participle
+                        "{}. The correct answer is: {} - {} - {}",
+                        error, verb.infinitive, verb.past, verb.past_participle
                     )
                     .red()
                     .bold()
                 );
             }
+
+            if let Ok(validated_input) = is_two_forms_correct(input) {
+                let mut parts = validated_input.split_whitespace();
+                let past = parts.next().unwrap_or("").to_lowercase();
+                let past_participle = parts.next().unwrap_or("").to_lowercase();
+
+                if past == verb.past && past_participle == verb.past_participle {
+                    correct_answers += 1;
+                    println!("{}", "Correct!".green().bold());
+                } else {
+                    println!(
+                        "{}",
+                        format!(
+                            "Incorrect. The correct answer is: {} - {} - {}",
+                            verb.infinitive, verb.past, verb.past_participle
+                        )
+                        .red()
+                        .bold()
+                    );
+                }
+            }
+
             total_answers += 1;
 
             println!()
