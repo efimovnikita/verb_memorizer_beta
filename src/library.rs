@@ -5,6 +5,20 @@ use std::io;
 use std::io::BufRead;
 use std::path::Path;
 
+pub fn validate(past: String, verb: &&IrregularVerb, past_participle: String) -> (bool, String) {
+    if past == verb.past && past_participle == verb.past_participle {
+        (true, "".to_string())
+    } else {
+        (
+            false,
+            format!(
+                "{} - {} - {}",
+                verb.infinitive, verb.past, verb.past_participle
+            ),
+        )
+    }
+}
+
 pub(crate) fn is_path_exists(path: &str) -> Result<String, String> {
     if Path::new(&path).exists() {
         Ok(path.to_string())
@@ -67,10 +81,10 @@ impl ResultMsg {
     }
 }
 
-pub(crate) struct IrregularVerb {
-    pub(crate) infinitive: String,
-    pub(crate) past: String,
-    pub(crate) past_participle: String,
+pub struct IrregularVerb {
+    pub infinitive: String,
+    pub past: String,
+    pub past_participle: String,
 }
 
 impl IrregularVerb {

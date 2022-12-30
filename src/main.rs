@@ -97,18 +97,17 @@ fn main() {
                 let past = parts.next().unwrap_or("").to_lowercase();
                 let past_participle = parts.next().unwrap_or("").to_lowercase();
 
-                if past == verb.past && past_participle == verb.past_participle {
+                let validation_result = library::validate(past, &verb, past_participle);
+
+                if validation_result.0 {
                     correct_answers += 1;
                     println!("{}", "Correct!".green().bold());
                 } else {
                     println!(
                         "{}",
-                        format!(
-                            "Incorrect. The correct answer is: {} - {} - {}",
-                            verb.infinitive, verb.past, verb.past_participle
-                        )
-                        .red()
-                        .bold()
+                        format!("Incorrect. The correct answer is: {}", validation_result.1)
+                            .red()
+                            .bold()
                     );
                 }
             }
@@ -170,18 +169,10 @@ fn main() {
 
         let filtered_verb = filtered_verbs.first().unwrap();
 
-        if past == filtered_verb.past && past_participle == filtered_verb.past_participle {
-            let msg: library::ResultMsg = library::ResultMsg::new(true, "".to_string());
-            println!("{}", serde_json::to_string(&msg).unwrap());
-        } else {
-            let msg: library::ResultMsg = library::ResultMsg::new(
-                false,
-                format!(
-                    "{} - {} - {}",
-                    filtered_verb.infinitive, filtered_verb.past, filtered_verb.past_participle
-                ),
-            );
-            println!("{}", serde_json::to_string(&msg).unwrap());
-        }
+        let validation_result = library::validate(past, filtered_verb, past_participle);
+
+        let message: library::ResultMsg =
+            library::ResultMsg::new(validation_result.0, validation_result.1);
+        println!("{}", serde_json::to_string(&message).unwrap());
     }
 }
