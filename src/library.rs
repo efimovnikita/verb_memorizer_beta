@@ -19,6 +19,23 @@ pub fn validate(past: String, verb: &&IrregularVerb, past_participle: String) ->
     }
 }
 
+pub fn get_verbs(matches: &clap::ArgMatches) -> Result<(), String> {
+    // Get the value of the "FILE" argument
+    let file_path = matches.get_one::<String>("FILE").unwrap();
+    let mut verbs: Vec<IrregularVerb> = Vec::new();
+    match read_irregular_verbs(file_path) {
+        Ok(vector) => verbs.extend(vector),
+        Err(error) => {
+            format!("Error while extracting list of verbs from file: {error}");
+        }
+    };
+    for verb in verbs {
+        println!("{}", verb.infinitive);
+    }
+
+    Ok(())
+}
+
 pub(crate) fn is_path_exists(path: &str) -> Result<String, String> {
     if Path::new(&path).exists() {
         Ok(path.to_string())

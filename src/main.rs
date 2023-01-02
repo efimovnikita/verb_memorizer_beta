@@ -1,4 +1,4 @@
-use crate::library::is_two_forms_correct;
+use crate::library::{get_verbs, is_two_forms_correct};
 use clap::{Arg, Command};
 use colored::*;
 use rand::{seq::SliceRandom, thread_rng};
@@ -121,22 +121,13 @@ fn main() {
     }
 
     if let Some(matches) = matches.subcommand_matches("verbs") {
-        // Get the value of the "FILE" argument
-        let file_path = matches.get_one::<String>("FILE").unwrap();
-
-        let mut verbs: Vec<library::IrregularVerb> = Vec::new();
-
-        match library::read_irregular_verbs(file_path) {
-            Ok(vector) => verbs.extend(vector),
+        match get_verbs(matches) {
+            Ok(_) => {}
             Err(error) => {
-                eprintln!("Error while extracting list of verbs from file: {error}");
+                eprintln!("{error}");
                 std::process::exit(1)
             }
-        }
-
-        for verb in verbs {
-            println!("{}", verb.infinitive);
-        }
+        };
     }
 
     if let Some(matches) = matches.subcommand_matches("check") {
