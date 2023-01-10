@@ -1,5 +1,6 @@
 use crate::library::{get_verbs, is_two_forms_correct};
 use clap::{Arg, Command};
+use cursive::theme::{Color, PaletteColor, Theme};
 use cursive::view::{Nameable, Resizable};
 use cursive::views::{Dialog, EditView, LinearLayout, TextView};
 use cursive::Cursive;
@@ -64,6 +65,9 @@ fn main() {
         verbs.shuffle(&mut rng);
 
         let mut siv = cursive::default();
+
+        let theme = custom_theme_from_cursive(&siv);
+        siv.set_theme(theme);
 
         siv.add_layer(
             Dialog::around(
@@ -142,7 +146,7 @@ fn validate_and_show_next(s: &mut Cursive, verbs: &[library::IrregularVerb]) {
 
     if let Err(error) = is_two_forms_correct(answer.as_str()) {
         s.add_layer(Dialog::info(format!(
-            "{}. The correct answer is: {} - {} - {}",
+            "{}.\nThe correct answer is: {} - {} - {}",
             error, verb.infinitive, verb.past, verb.past_participle
         )));
         return;
@@ -196,4 +200,13 @@ fn validate_and_show_next(s: &mut Cursive, verbs: &[library::IrregularVerb]) {
             .button("Quit", |s| s.quit()),
         );
     }
+}
+
+fn custom_theme_from_cursive(siv: &Cursive) -> Theme {
+    // We'll return the current theme with a small modification.
+    let mut theme = siv.current_theme().clone();
+
+    theme.palette[PaletteColor::Background] = Color::TerminalDefault;
+
+    theme
 }
