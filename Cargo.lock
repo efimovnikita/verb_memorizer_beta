@@ -825,7 +825,7 @@ checksum = "c0edd1e5b14653f783770bce4a4dabb4a5108a5370a5f5d8cfe8710c361f6c8b"
 
 [[package]]
 name = "verb_memorizer_beta"
-version = "0.10.11"
+version = "0.11.0"
 dependencies = [
  "assert_cmd",
  "clap",

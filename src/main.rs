@@ -71,11 +71,14 @@ fn main() {
                     .child(
                         TextView::new(format!("Verb: {}", &verbs[0].infinitive)).with_name("text"),
                     )
-                    .child(EditView::new().with_name("edit"))
-                    .fixed_width(25),
+                    .child(
+                        EditView::new()
+                            .on_submit(move |s, _text| validate_and_show_next(s, &verbs))
+                            .with_name("edit"),
+                    )
+                    .fixed_width(40),
             )
-            .title("Question")
-            .button("Validate", move |s| validate_and_show_next(s, &verbs))
+            .title("Write second and third form")
             .button("Quit", |s| s.quit()),
         );
 
@@ -182,11 +185,14 @@ fn validate_and_show_next(s: &mut Cursive, verbs: &[library::IrregularVerb]) {
                         TextView::new(format!("Verb: {}", &new_verbs[0].infinitive))
                             .with_name("text"),
                     )
-                    .child(EditView::new().with_name("edit"))
-                    .fixed_width(25),
+                    .child(
+                        EditView::new()
+                            .on_submit(move |s, _text| validate_and_show_next(s, &new_verbs))
+                            .with_name("edit"),
+                    )
+                    .fixed_width(40),
             )
-            .title("Question")
-            .button("Validate", move |s| validate_and_show_next(s, &new_verbs))
+            .title("Write second and third form")
             .button("Quit", |s| s.quit()),
         );
     }
