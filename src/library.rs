@@ -98,6 +98,7 @@ impl ResultMsg {
     }
 }
 
+#[derive(Clone)]
 pub struct IrregularVerb {
     pub infinitive: String,
     pub past: String,

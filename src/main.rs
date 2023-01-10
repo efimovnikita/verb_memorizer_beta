@@ -1,6 +1,8 @@
 use crate::library::{get_verbs, is_two_forms_correct};
 use clap::{Arg, Command};
-use colored::*;
+use cursive::view::{Nameable, Resizable};
+use cursive::views::{Dialog, EditView, LinearLayout, TextView};
+use cursive::Cursive;
 use rand::{seq::SliceRandom, thread_rng};
 
 mod library;
@@ -61,63 +63,23 @@ fn main() {
         let mut rng = thread_rng();
         verbs.shuffle(&mut rng);
 
-        let mut correct_answers = 0;
-        let mut total_answers = 0;
+        let mut siv = cursive::default();
 
-        for verb in &verbs {
-            println!(
-                "{}",
-                format!("Infinitive form: {}", verb.infinitive)
-                    .underline()
-                    .yellow()
-                    .bold()
-            );
-
-            println!("Past and past participle forms (separated by a space):");
-            let mut input = String::new();
-            std::io::stdin()
-                .read_line(&mut input)
-                .expect("Error reading input");
-            let input = input.trim();
-
-            if let Err(error) = is_two_forms_correct(input) {
-                println!(
-                    "{}",
-                    format!(
-                        "{}. The correct answer is: {} - {} - {}",
-                        error, verb.infinitive, verb.past, verb.past_participle
+        siv.add_layer(
+            Dialog::around(
+                LinearLayout::vertical()
+                    .child(
+                        TextView::new(format!("Verb: {}", &verbs[0].infinitive)).with_name("text"),
                     )
-                    .red()
-                    .bold()
-                );
-            }
+                    .child(EditView::new().with_name("edit"))
+                    .fixed_width(25),
+            )
+            .title("Question")
+            .button("Validate", move |s| validate_and_show_next(s, &verbs))
+            .button("Quit", |s| s.quit()),
+        );
 
-            if let Ok(validated_input) = is_two_forms_correct(input) {
-                let mut parts = validated_input.split_whitespace();
-                let past = parts.next().unwrap_or("").to_lowercase();
-                let past_participle = parts.next().unwrap_or("").to_lowercase();
-
-                let validation_result = library::validate(past, &verb, past_participle);
-
-                if validation_result.0 {
-                    correct_answers += 1;
-                    println!("{}", "Correct!".green().bold());
-                } else {
-                    println!(
-                        "{}",
-                        format!("Incorrect. The correct answer is: {}", validation_result.1)
-                            .red()
-                            .bold()
-                    );
-                }
-            }
-
-            total_answers += 1;
-
-            println!()
-        }
-
-        println!("Correct answers: {correct_answers}/{total_answers}");
+        siv.run();
     }
 
     if let Some(matches) = matches.subcommand_matches("verbs") {
@@ -165,5 +127,67 @@ fn main() {
         let message: library::ResultMsg =
             library::ResultMsg::new(validation_result.0, validation_result.1);
         println!("{}", serde_json::to_string(&message).unwrap());
+    }
+}
+
+fn validate_and_show_next(s: &mut Cursive, verbs: &[library::IrregularVerb]) {
+    let answer = s
+        .call_on_name("edit", |view: &mut EditView| view.get_content())
+        .unwrap();
+
+    let verb = &verbs[0];
+
+    if let Err(error) = is_two_forms_correct(answer.as_str()) {
+        s.add_layer(Dialog::info(format!(
+            "{}. The correct answer is: {} - {} - {}",
+            error, verb.infinitive, verb.past, verb.past_participle
+        )));
+        return;
+    }
+
+    if let Ok(validated_input) = is_two_forms_correct(answer.as_str()) {
+        let mut parts = validated_input.split_whitespace();
+        let past = parts.next().unwrap_or("").to_lowercase();
+        let past_participle = parts.next().unwrap_or("").to_lowercase();
+
+        let validation_result = library::validate(past, &verb, past_participle);
+
+        if !validation_result.0 {
+            s.add_layer(Dialog::info(format!(
+                "Incorrect. The correct answer is: {}",
+                validation_result.1
+            )));
+            return;
+        }
+
+        let new_verbs: Vec<library::IrregularVerb> = verbs.iter().skip(1).cloned().collect();
+
+        if new_verbs.is_empty() {
+            s.pop_layer();
+            s.pop_layer();
+            s.add_layer(
+                Dialog::around(TextView::new("Done!"))
+                    .title("Finish")
+                    .button("Ok", |s| s.quit())
+                    .fixed_width(25),
+            );
+            return;
+        }
+
+        s.pop_layer();
+        s.add_layer(
+            Dialog::around(
+                LinearLayout::vertical()
+                    .child(
+                        TextView::new(format!("Verb: {}", &new_verbs[0].infinitive))
+                            .with_name("text"),
+                    )
+                    .child(EditView::new().with_name("edit"))
+                    .fixed_width(25),
+            )
+            .title("Question")
+            .button("Validate", move |s| validate_and_show_next(s, &new_verbs))
+            .button("Quit", |s| s.quit()),
+        );
     }
 }
