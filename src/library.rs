@@ -1,5 +1,6 @@
 use regex::Regex;
 use serde::Serialize;
+use std::collections::VecDeque;
 use std::fs;
 use std::io;
 use std::io::BufRead;
@@ -111,6 +112,30 @@ impl IrregularVerb {
             infinitive,
             past,
             past_participle,
+        }
+    }
+    pub fn default() -> IrregularVerb {
+        IrregularVerb {
+            infinitive: "".to_string(),
+            past: "".to_string(),
+            past_participle: "".to_string(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct VerbQueue {
+    pub queue: VecDeque<IrregularVerb>,
+    pub verbs_count: usize,
+    pub errors: i32,
+}
+
+impl VerbQueue {
+    pub fn new(verbs: Vec<IrregularVerb>) -> VerbQueue {
+        VerbQueue {
+            queue: VecDeque::from(verbs.clone()),
+            verbs_count: verbs.len(),
+            errors: 0,
         }
     }
 }

@@ -4,6 +4,7 @@ use cursive::theme::{Color, PaletteColor, Theme};
 use cursive::view::{Nameable, Resizable};
 use cursive::views::{Dialog, EditView, LinearLayout, TextView};
 use cursive::Cursive;
+use library::{IrregularVerb, VerbQueue};
 use rand::{seq::SliceRandom, thread_rng};
 
 mod library;
@@ -69,15 +70,19 @@ fn main() {
         let theme = custom_theme_from_cursive(&siv);
         siv.set_theme(theme);
 
+        let user_data = library::VerbQueue::new(verbs);
+        siv.set_user_data(user_data.clone());
+
         siv.add_layer(
             Dialog::around(
                 LinearLayout::vertical()
-                    .child(
-                        TextView::new(format!("Verb: {}", &verbs[0].infinitive)).with_name("text"),
-                    )
+                    .child(TextView::new(format!(
+                        "Verb: {}",
+                        user_data.queue.front().unwrap().infinitive
+                    )))
                     .child(
                         EditView::new()
-                            .on_submit(move |s, _text| validate_and_show_next(s, &verbs))
+                            .on_submit(validate_and_show_next)
                             .with_name("edit"),
                     )
                     .fixed_width(40),
@@ -137,61 +142,77 @@ fn main() {
     }
 }
 
-fn validate_and_show_next(s: &mut Cursive, verbs: &[library::IrregularVerb]) {
-    let answer = s
-        .call_on_name("edit", |view: &mut EditView| view.get_content())
+fn validate_and_show_next(s: &mut Cursive, text: &str) {
+    let mut verb: IrregularVerb = IrregularVerb::default();
+    s.with_user_data(|data: &mut VerbQueue| verb = data.queue.front().unwrap().clone())
         .unwrap();
 
-    let verb = &verbs[0];
-
-    if let Err(error) = is_two_forms_correct(answer.as_str()) {
+    if let Err(error) = is_two_forms_correct(text) {
         s.add_layer(Dialog::info(format!(
             "{}.\nThe correct answer is: {} - {} - {}",
-            error, verb.infinitive, verb.past, verb.past_participle
+            error, verb.infinitive, verb.past, verb.past_participle,
         )));
+        s.with_user_data(|data: &mut VerbQueue| data.errors += 1);
         return;
     }
 
-    if let Ok(validated_input) = is_two_forms_correct(answer.as_str()) {
+    if let Ok(validated_input) = is_two_forms_correct(text) {
         let mut parts = validated_input.split_whitespace();
         let past = parts.next().unwrap_or("").to_lowercase();
         let past_participle = parts.next().unwrap_or("").to_lowercase();
 
-        let validation_result = library::validate(past, &verb, past_participle);
+        let validation_result = library::validate(past, &&verb, past_participle);
 
         if !validation_result.0 {
             s.add_layer(Dialog::info(format!(
                 "Incorrect. The correct answer is: {}",
                 validation_result.1
             )));
+            s.with_user_data(|data: &mut VerbQueue| data.errors += 1);
             return;
         }
 
-        let new_verbs: Vec<library::IrregularVerb> = verbs.iter().skip(1).cloned().collect();
+        // pop new verb
+        s.with_user_data(|data: &mut VerbQueue| data.queue.pop_front());
 
-        if new_verbs.is_empty() {
+        let mut empty_list: bool = false;
+        s.with_user_data(|data: &mut VerbQueue| {
+            if data.queue.is_empty() {
+                empty_list = true;
+            }
+        });
+
+        if empty_list {
+            let mut total: usize = 0;
+            let mut errors: i32 = 0;
+
+            s.with_user_data(|data: &mut VerbQueue| total = data.verbs_count);
+            s.with_user_data(|data: &mut VerbQueue| errors = data.errors);
+
             s.pop_layer();
             s.pop_layer();
             s.add_layer(
-                Dialog::around(TextView::new("Done!"))
-                    .title("Finish")
-                    .button("Ok", |s| s.quit())
-                    .fixed_width(25),
+                Dialog::around(TextView::new(format!(
+                    "Done!\nTotal number of verbs: {total}\nNumbers of errors: {errors}"
+                )))
+                .title("Finish")
+                .button("Ok", |s| s.quit())
+                .fixed_width(45),
             );
             return;
         }
+
+        s.with_user_data(|data: &mut VerbQueue| verb = data.queue.front().unwrap().clone())
+            .unwrap();
 
         s.pop_layer();
         s.add_layer(
             Dialog::around(
                 LinearLayout::vertical()
-                    .child(
-                        TextView::new(format!("Verb: {}", &new_verbs[0].infinitive))
-                            .with_name("text"),
-                    )
+                    .child(TextView::new(format!("Verb: {}", verb.infinitive)))
                     .child(
                         EditView::new()
-                            .on_submit(move |s, _text| validate_and_show_next(s, &new_verbs))
+                            .on_submit(validate_and_show_next)
                             .with_name("edit"),
                     )
                     .fixed_width(40),
