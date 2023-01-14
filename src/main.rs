@@ -143,9 +143,10 @@ fn main() {
 }
 
 fn validate_and_show_next(s: &mut Cursive, text: &str) {
-    let mut verb: IrregularVerb = IrregularVerb::default();
-    s.with_user_data(|data: &mut VerbQueue| verb = data.queue.front().unwrap().clone())
-        .unwrap();
+    let mut verb = s
+        .user_data::<VerbQueue>()
+        .and_then(|data| data.queue.front().cloned())
+        .unwrap_or_else(IrregularVerb::default);
 
     if let Err(error) = is_two_forms_correct(text) {
         s.add_layer(Dialog::info(format!(
@@ -183,11 +184,15 @@ fn validate_and_show_next(s: &mut Cursive, text: &str) {
         });
 
         if empty_list {
-            let mut total: usize = 0;
-            let mut errors: i32 = 0;
+            let total = s
+                .user_data::<VerbQueue>()
+                .map(|data| data.verbs_count)
+                .unwrap_or(0);
 
-            s.with_user_data(|data: &mut VerbQueue| total = data.verbs_count);
-            s.with_user_data(|data: &mut VerbQueue| errors = data.errors);
+            let errors = s
+                .user_data::<VerbQueue>()
+                .map(|data| data.errors)
+                .unwrap_or(0);
 
             s.pop_layer();
             s.pop_layer();
