@@ -232,8 +232,6 @@ fn validate_and_show_next(cursive: &mut Cursive, text: &str) {
 fn custom_theme_from_cursive(siv: &Cursive) -> Theme {
     // We'll return the current theme with a small modification.
     let mut theme = siv.current_theme().clone();
-
     theme.palette[PaletteColor::Background] = Color::TerminalDefault;
-
     theme
 }
