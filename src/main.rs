@@ -142,18 +142,18 @@ fn main() {
     }
 }
 
-fn validate_and_show_next(s: &mut Cursive, text: &str) {
-    let mut verb = s
+fn validate_and_show_next(cursive: &mut Cursive, text: &str) {
+    let mut verb = cursive
         .user_data::<VerbQueue>()
         .and_then(|data| data.queue.front().cloned())
         .unwrap_or_else(IrregularVerb::default);
 
     if let Err(error) = is_two_forms_correct(text) {
-        s.add_layer(Dialog::info(format!(
+        cursive.add_layer(Dialog::info(format!(
             "{}.\nThe correct answer is: {} - {} - {}",
             error, verb.infinitive, verb.past, verb.past_participle,
         )));
-        s.with_user_data(|data: &mut VerbQueue| data.errors += 1);
+        cursive.with_user_data(|data: &mut VerbQueue| data.errors += 1);
         return;
     }
 
@@ -165,38 +165,38 @@ fn validate_and_show_next(s: &mut Cursive, text: &str) {
         let validation_result = library::validate(past, &&verb, past_participle);
 
         if !validation_result.0 {
-            s.add_layer(Dialog::info(format!(
+            cursive.add_layer(Dialog::info(format!(
                 "Incorrect. The correct answer is: {}",
                 validation_result.1
             )));
-            s.with_user_data(|data: &mut VerbQueue| data.errors += 1);
+            cursive.with_user_data(|data: &mut VerbQueue| data.errors += 1);
             return;
         }
 
         // pop new verb
-        s.with_user_data(|data: &mut VerbQueue| data.queue.pop_front());
+        cursive.with_user_data(|data: &mut VerbQueue| data.queue.pop_front());
 
         let mut empty_list: bool = false;
-        s.with_user_data(|data: &mut VerbQueue| {
+        cursive.with_user_data(|data: &mut VerbQueue| {
             if data.queue.is_empty() {
                 empty_list = true;
             }
         });
 
         if empty_list {
-            let total = s
+            let total = cursive
                 .user_data::<VerbQueue>()
                 .map(|data| data.verbs_count)
                 .unwrap_or(0);
 
-            let errors = s
+            let errors = cursive
                 .user_data::<VerbQueue>()
                 .map(|data| data.errors)
                 .unwrap_or(0);
 
-            s.pop_layer();
-            s.pop_layer();
-            s.add_layer(
+            cursive.pop_layer();
+            cursive.pop_layer();
+            cursive.add_layer(
                 Dialog::around(TextView::new(format!(
                     "Done!\nTotal number of verbs: {total}\nNumbers of errors: {errors}"
                 )))
@@ -207,11 +207,12 @@ fn validate_and_show_next(s: &mut Cursive, text: &str) {
             return;
         }
 
-        s.with_user_data(|data: &mut VerbQueue| verb = data.queue.front().unwrap().clone())
+        cursive
+            .with_user_data(|data: &mut VerbQueue| verb = data.queue.front().unwrap().clone())
             .unwrap();
 
-        s.pop_layer();
-        s.add_layer(
+        cursive.pop_layer();
+        cursive.add_layer(
             Dialog::around(
                 LinearLayout::vertical()
                     .child(TextView::new(format!("Verb: {}", verb.infinitive)))
